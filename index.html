@@ -41,9 +41,7 @@
                         <p class="lead">Find your next read</p>
                         <select id="genre-select">
                         </select>
-
-                        <div class="row" id="book-container"></div>
-
+                        <p><div class="row" id="book-container"></div></p>
                     </div>
                 </div>
             </div>
@@ -148,30 +146,36 @@
                 var nytData = await nytResponse.json()
                 var books = nytData.results.books
 
-                // Loop through books and fetch cover images
-                for (var book of books) {
-                    var googleResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}&inauthor:${encodeURIComponent(book.author)}&key=${googapiKey}`)
+            // Loop through books and fetch cover images
+            for (var book of books) {
+                var coverImage = "https://via.placeholder.com/128x192?text=No+Cover"
+
+                try {
+                    var googleResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}+inauthor:${encodeURIComponent(book.author)}&key=${googapiKey}`)
                     var googleData = await googleResponse.json()
                     
-                    var image = "https://via.placeholder.com/128x192?text=No+Cover";
-                    if (googleData.items && googleData.items.length > 0 && googleData.items[0].volumeInfo.imageLinks) {
-                        image = googleData.items[0].volumeInfo.imageLinks.thumbnail;
+                    if (googleData.items && googleData.items[0].volumeInfo.imageLinks?.thumbnail) {
+                    coverImage = googleData.items[0].volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//, 'https://');
                     }
-            
+                } catch (err) {
+                    console.error("Google Books fetch error:", err);
+                }
+
                 var bookCard = document.createElement("div");
                 bookCard.className = "col-6 col-sm-4 col-md-3 book-card";
                 bookCard.innerHTML = `
-                    <img src="${image}" alt="${book.title}" />
-                    <p>${book.title}<br><small>${book.author}</small></p>
+                        <img src="${coverImage}" alt="${book.title}" class="img-fluid mb-2" />
+                        <h6>${book.title}</h6>
+                        <p class="small">${book.author}</p>
 
                 `
                 bookContainer.appendChild(bookCard)
-            }
-
-            } catch(error) {
-                console.error("ERROR:", error)
-            }
-        })
+            } 
+        
+    } catch (error) {
+        console.error("Error loading NYT data:", error);
+    }
+})
             </script>
     </body>
 </html>

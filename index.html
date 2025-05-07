@@ -2,18 +2,21 @@
 <html lang="en">
 
     //Template from Start Bootstrap https://startbootstrap.com/template/scrolling-nav
+    //Used ChatGPT to help figure out how to combine two APIs
 
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-        <meta name="description" content="" />
-        <meta name="author" content="" />
-        <title>NYT Bestsellers</title>
+        <meta name="description" content="A site for discovering new reads" />
+        <meta name="author" content="Rachel S. Wang" />
+        <title>Choose the Next Chapter</title>
         <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+        
         <!-- Core theme CSS (includes Bootstrap)-->
         <link href="css/styles.css" rel="stylesheet" />
     </head>
     <body id="page-top">
+
         <!-- Navigation-->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
             <div class="container px-4">
@@ -23,11 +26,13 @@
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item"><a class="nav-link" href="#nyt">NYT</a></li>
                         <li class="nav-item"><a class="nav-link" href="#personal">Personal</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     </ul>
                 </div>
             </div>
         </nav>
-        <!-- About section-->
+
+        <!-- NYT Bestsellers section-->
         <section id="nyt">
             <div class="container px-4">
                 <div class="row gx-4 justify-content-center">
@@ -35,23 +40,16 @@
                         <h2>NYT Bestsellers</h2>
                         <p class="lead">Find your next read</p>
                         <select id="genre-select">
-                            <option value="" selected disabled>Choose a genre</option>
-                            <option value="fiction">Fiction</option>
-                            <option value="nonfiction">Non-Fiction</option>
-                            <option value="mystery">Mystery</option>
-                            <option value="science-fiction">Science Fiction</option>
-                            <option value="romance">Romance</option>
                         </select>
 
-                        <div class="row" id="bookResults"></div>
-
-
+                        <div class="row" id="book-container"></div>
 
                     </div>
                 </div>
             </div>
         </section>
-        <!-- Services section-->
+
+        <!-- Personal section-->
         <section class="bg-light" id="personal">
             <div class="container px-4">
                 <div class="row gx-4 justify-content-center">
@@ -62,51 +60,118 @@
                 </div>
             </div>
         </section>
+
+        <!-- About section-->
+        <section id="about">
+            <div class="container px-4">
+                <div class="row gx-4 justify-content-center">
+                    <div class="col-lg-8">
+                        <h2>About</h2><br>
+                            <p class="lead">Hi, I'm Rachel. I created this site because I'm curious about what people are reading these days. I wanted to see the latest NYT Bestsellers across various genres and get a sense of what's popular.</p>
+                            <p class="lead">But it's not just about that — I also want to share some of my own personal favorite books with you.</p>
+                            <p class="lead">Whether you're looking for inspiration for your next read or just want to know what others are into, this is the place to explore!</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Footer-->
         <footer class="py-5 bg-dark">
             <div class="container px-4"><p class="m-0 text-center text-white">Copyright &copy; Rachel S. Wang 2025</p></div>
         </footer>
+        
         <!-- Bootstrap core JS-->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+        
         <!-- Core theme JS-->
         <script src="js/scripts.js"></script>
         <script>
-            document.getElementById('genreSelect').addEventListener('change', async function () {
-                const genre = this.value;
-                const nytApiKey = 'YOUR_NYT_API_KEY';
-                const nytUrl = `https://api.nytimes.com/svc/books/v3/lists/current/${genre}.json?api-key=${nytApiKey}`;
-            
-                try {
-                    const nytResponse = await fetch(nytUrl);
-                    const nytData = await nytResponse.json();
-                    const books = nytData.results.books;
-                    const bookResults = document.getElementById('bookResults');
-                    bookResults.innerHTML = '';
-            
-                    for (const book of books) {
-                        const googleUrl = `https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}+inauthor:${encodeURIComponent(book.author)}`;
-                        const googleResponse = await fetch(googleUrl);
-                        const googleData = await googleResponse.json();
-            
-                        const thumbnail = googleData.items?.[0]?.volumeInfo?.imageLinks?.thumbnail || 'https://via.placeholder.com/128x192?text=No+Cover';
-            
-                        bookResults.innerHTML += `
-                            <div class="col-md-3 mb-4">
-                                <div class="card h-100">
-                                    <img src="${thumbnail}" class="card-img-top" alt="Cover of ${book.title}">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${book.title}</h5>
-                                        <p class="card-text"><small>by ${book.author}</small></p>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } catch (error) {
-                    console.error('Error fetching book data:', error);
+        // Prompt to store API keys in session storage
+        var nytapiKey = sessionStorage.getItem("NYT_API_KEY")
+        var googapiKey = sessionStorage.getItem("GOOGLEBOOKS_API_KEY")
+        if (!nytapiKey || !googapiKey) {
+            // if it isn't there, ask the user to supply it:
+            nytapiKey = prompt("Enter your NYT API key:")
+            googapiKey = prompt("Enter your Google Books API key:")
+
+            // store it in the session for later (so it will persist after refreshing the page)
+            sessionStorage.setItem("NYT_API_KEY", nytapiKey)
+            sessionStorage.setItem("GOOGLEBOOKS_API_KEY", googapiKey)
+        }
+
+        var genreSelect = document.getElementById("genre-select")
+        var bookContainer = document.getElementById("book-container")
+
+        fetch(`https://api.nytimes.com/svc/books/v3/lists/names.json?api-key=${nytapiKey}`)
+            .then(function(response) {
+            return response.json();
+        })
+            .then(function(data) {
+                var genres = data.results;
+                // Specify the genres you want to show
+                var selectedGenres = [
+                    "combined-print-and-e-book-fiction",
+                    "combined-print-and-e-book-nonfiction",
+                    "advice-how-to-and-miscellaneous",
+                    "business-books",
+                    "graphic-books-and-manga"
+                ]
+
+                // Add a default prompt option
+                var defaultOption = document.createElement("option");
+                defaultOption.textContent = "Choose a genre";
+                defaultOption.disabled = true;
+                defaultOption.selected = true;
+                genreSelect.appendChild(defaultOption);
+
+                // Loop through the genres and only add the selected ones
+                genres.forEach(genre => {
+                if (selectedGenres.includes(genre.list_name_encoded)) {
+                    var option = document.createElement("option");
+                    option.value = genre.list_name_encoded;
+                    option.textContent = genre.display_name;
+                    genreSelect.appendChild(option);
                 }
-            });
-            </script>
+            })
+        })
+
+        //Fetch and display books
+        genreSelect.addEventListener("change", async function () {
+            var selectedGenre = this.value // get the selected genre
+            if(!selectedGenre) return
             
+            bookContainer.innerHTML = "" // clear previous books
+
+            try {
+                //Fetch NYT data
+                var nytResponse = await fetch(`https://api.nytimes.com/svc/books/v3/lists/current/${selectedGenre}.json?api-key=${nytapiKey}`);
+                var nytData = await nytResponse.json()
+                var books = nytData.results.books
+
+                // Loop through books and fetch cover images
+                for (var book of books) {
+                    var googleResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}&inauthor:${encodeURIComponent(book.author)}&key=${googapiKey}`)
+                    var googleData = await googleResponse.json()
+                    
+                    var image = "https://via.placeholder.com/128x192?text=No+Cover";
+                    if (googleData.items && googleData.items.length > 0 && googleData.items[0].volumeInfo.imageLinks) {
+                        image = googleData.items[0].volumeInfo.imageLinks.thumbnail;
+                    }
+            
+                var bookCard = document.createElement("div");
+                bookCard.className = "col-6 col-sm-4 col-md-3 book-card";
+                bookCard.innerHTML = `
+                    <img src="${image}" alt="${book.title}" />
+                    <p>${book.title}<br><small>${book.author}</small></p>
+
+                `
+                bookContainer.appendChild(bookCard)
+            }
+
+            } catch(error) {
+                console.error("ERROR:", error)
+            }
+        })
+            </script>
     </body>
 </html>

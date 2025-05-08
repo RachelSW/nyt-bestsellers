@@ -14,7 +14,7 @@ This project requires **API keys** for:
 - Copy your generated **API Key**.
 
 ### 2. Google Books API
-- Visit: [https://console.cloud.google.com/](https://console.cloud.google.com/)
+- Visit: [https://console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
 - Sign in with your Google account.
 - Create a new project (if needed).
 - Go to **APIs & Services > Library** and enable the **Books API**.

@@ -21,11 +21,11 @@
         <!-- Navigation-->
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top" id="mainNav">
             <div class="container px-4">
-                <a class="navbar-brand" href="#page-top">Library</a>
+                <a class="navbar-brand" href="#page-top">Choose the Next Chapter</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
                 <div class="collapse navbar-collapse" id="navbarResponsive">
                     <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="#nyt">NYT</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#nyt">Bestsellers</a></li>
                         <li class="nav-item"><a class="nav-link" href="#personal">Personal</a></li>
                         <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     </ul>
@@ -40,6 +40,7 @@
                     <div class="col-lg-8">
                         <h2>NYT Bestsellers</h2>
                         <p class="lead">Check out the latest book buzz</p>
+                        <br>
                         <select id="genre-select">
                         </select>
                         <p><div class="row" id="book-container"></div></p>
@@ -225,7 +226,16 @@
                 `
                 bookContainer.appendChild(bookCard)
             } 
-        
+        const elements = document.querySelectorAll('.fade-in');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+             });
+        });
+        elements.forEach(el => observer.observe(el));
+
     } catch (error) {
         console.error("Error loading NYT data:", error);
     }

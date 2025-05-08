@@ -54,6 +54,36 @@
                     <div class="col-lg-8">
                         <h2>Personal Faves</h2>
                         <p class="lead">I love books</p>
+                        <div class="row">
+                            <!-- Adobe and Arsenic -->
+                            <div class="col-6 col-sm-4 col-md-3 book-card">
+                                <img src="https://books.google.com/books/content?id=qZhwEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api" alt="Adobe and Arsenic" class="img-fluid mb-2" />
+                                <h6>Adobe and Arsenic</h6>
+                                <p class="small">Mia P. Manansala</p>
+                            </div>
+                        
+                            <!-- Sorry I'm Late -->
+                            <div class="col-6 col-sm-4 col-md-3 book-card">
+                                <img src="https://books.google.com/books/content?id=8G6wDwAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api" alt="Sorry I'm Late, I Didn't Want to Come" class="img-fluid mb-2" />
+                                <h6>Sorry I'm Late...</h6>
+                                <p class="small">Jessica Pan</p>
+                            </div>
+                        
+                            <!-- Wild -->
+                            <div class="col-6 col-sm-4 col-md-3 book-card">
+                                <img src="http://books.google.com/books/content?id=OSUayFddVccC&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api" alt="Wild" class="img-fluid mb-2" />
+                                <h6>Wild</h6>
+                                <p class="small">Cheryl Strayed</p>
+                            </div>
+                        
+                            <!-- Our Missing Hearts -->
+                            <div class="col-6 col-sm-4 col-md-3 book-card">
+                                <img src="https://books.google.com/books/content?id=MiJIEAAAQBAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api" alt="Our Missing Hearts" class="img-fluid mb-2" />
+                                <h6>Our Missing Hearts</h6>
+                                <p class="small">Celeste Ng</p>
+                            </div>
+                        </div>
+                        
                     </div>
                 </div>
             </div>
@@ -154,15 +184,28 @@
                     var googleResponse = await fetch(`https://www.googleapis.com/books/v1/volumes?q=intitle:${encodeURIComponent(book.title)}+inauthor:${encodeURIComponent(book.author)}&key=${googapiKey}`)
                     var googleData = await googleResponse.json()
                     
-                    if (googleData.items && googleData.items[0].volumeInfo.imageLinks?.thumbnail) {
-                    coverImage = googleData.items[0].volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//, 'https://');
+                    if (googleData.items && googleData.items.length > 0) {
+                        var matchedBook = googleData.items.find(item => {
+                            var info = item.volumeInfo;
+                            return info.title?.toLowerCase().includes(book.title.toLowerCase()) &&
+                                   info.authors?.some(author => book.author.toLowerCase().includes(author.toLowerCase()));
+                        })
+
+                    if (!matchedBook) {
+                        matchedBook = googleData.items[0]; // fallback to first result
                     }
+
+                    if (matchedBook.volumeInfo.imageLinks?.thumbnail) {
+                        coverImage = matchedBook.volumeInfo.imageLinks.thumbnail.replace(/^http:\/\//, 'https://');
+                    }
+                }
+
                 } catch (err) {
                     console.error("Google Books fetch error:", err);
                 }
 
                 var bookCard = document.createElement("div");
-                bookCard.className = "col-6 col-sm-4 col-md-3 book-card";
+                bookCard.className = "col-6 col-sm-5 col-md-3 book-card";
                 bookCard.innerHTML = `
                         <img src="${coverImage}" alt="${book.title}" class="img-fluid mb-2" />
                         <h6>${book.title}</h6>
